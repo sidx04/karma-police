@@ -27,13 +27,13 @@ ENV CGO_ENABLED=1
 WORKDIR /app
 
 # Copy system-eye source
-COPY src/system-eye/ /app/
+COPY system-eye/ /app/
 
 # Download Go dependencies
 RUN go mod download
 
 # Build system-eye
-RUN go build -o system-eye cmd/system-eye/main.go
+RUN go build -o system-eye ./cmd/system-eye/main.go
 
 # Expose ports
 EXPOSE 8080 50051
