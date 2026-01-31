@@ -9,16 +9,16 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
-COPY src/system-brain/requirements.txt /app/
+COPY system-brain/requirements.txt /app/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY src/system-brain/src/*.py /app/
+COPY system-brain/src/*.py /app/
 
 # Copy trained models
-COPY src/system-brain/models /models
+COPY system-brain/models /models
 
 EXPOSE 5000
 

@@ -1,32 +1,21 @@
-# Ubuntu base image for System Eye
-FROM ubuntu:22.04
+# Use official Go image - Docker will automatically pull the right 
+# version (ARM or Intel) based on your host architecture.
+FROM golang:1.21-bookworm
 
-# Install system dependencies
-RUN apt-get update -y && \
-    apt-get install -y \
-    wget \
-    tar \
-    git \
-    gcc \
-    make \
+# Install build-essential for CGO_ENABLED=1 (includes gcc, make, libc-dev)
+RUN apt-get update && apt-get install -y \
     curl \
-    libc6-dev \
     && apt-get clean
 
-# Install Go 1.21 (Ubuntu has 1.17 which is too old)
-RUN wget -q https://go.dev/dl/go1.21.13.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.21.13.linux-amd64.tar.gz && \
-    rm go1.21.13.linux-amd64.tar.gz
-
 # Set Go environment
-ENV GOPATH=/go
-ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 ENV CGO_ENABLED=1
 
 # Set working directory
 WORKDIR /app
 
 # Copy system-eye source
+# Make sure your context is correct: this assumes 'system-eye' folder 
+# is in the same directory as this Dockerfile.
 COPY system-eye/ /app/
 
 # Download Go dependencies
@@ -42,5 +31,5 @@ EXPOSE 8080 50051
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1
 
-# Run system-eye with gRPC and web enabled
+# Run system-eye
 CMD ["./system-eye", "--gpu=false", "--grpc", "--web", "--verbose"]
