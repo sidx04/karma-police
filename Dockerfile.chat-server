@@ -1,0 +1,17 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY src/system-eye/server/package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy server code
+COPY src/system-eye/server/server.js ./
+
+EXPOSE 3000
+
+# API key is passed via environment variable in docker-compose.yml
+CMD ["npm", "start"]

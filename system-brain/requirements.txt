@@ -1,0 +1,21 @@
+# Core dependencies for System's Brain
+
+# Data processing
+numpy>=1.21.0
+pandas>=1.3.0
+
+# Machine Learning
+scikit-learn>=1.0.0
+xgboost>=1.5.0
+
+# Deep Learning (for workload generation)
+torch>=2.0.0
+
+# Utilities
+pyyaml>=5.4.1
+click>=8.0.0
+tqdm>=4.62.0
+
+# Optional for advanced features
+# lightgbm>=3.3.0
+# optuna>=3.0.0  # For hyperparameter tuning

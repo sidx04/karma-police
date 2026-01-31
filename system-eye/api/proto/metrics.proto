@@ -1,0 +1,229 @@
+syntax = "proto3";
+
+package metrics;
+
+option go_package = "src/system-eye/api/proto;proto";
+
+// Import for timestamp support
+import "google/protobuf/timestamp.proto";
+
+// ============================================================================
+// Service Definition - This is the API contract
+// ============================================================================
+
+service MetricsService {
+  // Server streaming RPC - client requests once, server sends continuous stream
+  rpc StreamMetrics(StreamRequest) returns (stream SystemMetrics);
+
+  // Unary RPC - get a single snapshot
+  rpc GetMetrics(MetricsRequest) returns (SystemMetrics);
+}
+
+// ============================================================================
+// Request Messages
+// ============================================================================
+
+message StreamRequest {
+  // Interval in milliseconds between metric samples
+  int32 interval_ms = 1;
+
+  // Optional filters
+  bool include_gpu = 2;
+  bool include_processes = 3;
+  // NOTE: When include_processes=true, deadlock detection fields are
+  // automatically enriched Actual deadlock detection (cycle detection) is
+  // performed in Python
+}
+
+message MetricsRequest {
+  bool include_gpu = 1;
+  bool include_processes = 2;
+  // NOTE: When include_processes=true, deadlock detection fields are
+  // automatically enriched
+}
+
+// ============================================================================
+// System Metrics - Main response message
+// ============================================================================
+
+message SystemMetrics {
+  google.protobuf.Timestamp timestamp = 1;
+  CPUMetrics cpu = 2;
+  MemoryMetrics memory = 3;
+  DiskMetrics disk = 4;
+  NetworkMetrics network = 5;
+  optional GPUMetrics gpu = 6; // Optional - only if GPU available
+  optional ProcessMetrics processes = 7;
+  // ^ Optional - process monitoring with deadlock detection fields
+}
+
+// ============================================================================
+// CPU Metrics
+// ============================================================================
+
+message CPUMetrics {
+  double overall = 1;           // Overall CPU usage percentage
+  repeated double per_core = 2; // Per-core usage percentages
+  double load_avg_1 = 3;        // 1-minute load average
+  double load_avg_5 = 4;        // 5-minute load average
+  double load_avg_15 = 5;       // 15-minute load average
+  uint64 context_switches = 6;
+  uint64 interrupts = 7;
+}
+
+// ============================================================================
+// Memory Metrics
+// ============================================================================
+
+message MemoryMetrics {
+  uint64 total = 1;         // Total memory in bytes
+  uint64 used = 2;          // Used memory in bytes
+  uint64 free = 3;          // Free memory in bytes
+  uint64 available = 4;     // Available memory in bytes
+  uint64 cached = 5;        // Cached memory in bytes
+  uint64 buffers = 6;       // Buffer memory in bytes
+  double usage_percent = 7; // Memory usage as percentage
+}
+
+// ============================================================================
+// Disk Metrics
+// ============================================================================
+
+message DiskMetrics {
+  repeated DiskDevice devices = 1;
+  DiskIO total = 2; // Aggregated across all devices
+}
+
+message DiskDevice {
+  string name = 1; // Device name (e.g., "sda", "nvme0n1")
+  DiskIO io = 2;   // I/O statistics
+}
+
+message DiskIO {
+  uint64 read_bytes = 1;             // Bytes read
+  uint64 write_bytes = 2;            // Bytes written
+  uint64 read_ops = 3;               // Read operations
+  uint64 write_ops = 4;              // Write operations
+  optional double read_latency = 5;  // Average read latency (ms)
+  optional double write_latency = 6; // Average write latency (ms)
+}
+
+// ============================================================================
+// Network Metrics
+// ============================================================================
+
+message NetworkMetrics {
+  repeated NetworkInterface interfaces = 1;
+  NetworkTraffic total = 2; // Aggregated across all interfaces
+}
+
+message NetworkInterface {
+  string name = 1;            // Interface name (e.g., "eth0", "lo")
+  NetworkTraffic traffic = 2; // Traffic statistics
+}
+
+message NetworkTraffic {
+  uint64 rx_bytes = 1;   // Bytes received
+  uint64 tx_bytes = 2;   // Bytes transmitted
+  uint64 rx_packets = 3; // Packets received
+  uint64 tx_packets = 4; // Packets transmitted
+  uint64 rx_errors = 5;  // Receive errors
+  uint64 tx_errors = 6;  // Transmit errors
+  uint64 rx_dropped = 7; // Received packets dropped
+  uint64 tx_dropped = 8; // Transmitted packets dropped
+}
+
+// ============================================================================
+// GPU Metrics
+// ============================================================================
+
+message GPUMetrics { repeated GPUDevice devices = 1; }
+
+message GPUDevice {
+  int32 index = 1;       // GPU index
+  string name = 2;       // GPU name/model
+  string uuid = 3;       // GPU UUID
+  int32 utilization = 4; // GPU utilization percentage
+  GPUMemory memory = 5;  // Memory information
+  int32 temperature = 6; // GPU temperature (°C)
+  int32 power_usage = 7; // Power usage (watts)
+  int32 fan_speed = 8;   // Fan speed percentage
+}
+
+message GPUMemory {
+  uint64 total = 1;         // Total memory in bytes
+  uint64 used = 2;          // Used memory in bytes
+  uint64 free = 3;          // Free memory in bytes
+  double usage_percent = 4; // Memory usage percentage
+}
+
+// ============================================================================
+// Process Metrics
+// ============================================================================
+
+message ProcessMetrics {
+  repeated ProcessInfo processes = 1;
+  repeated ProcessInfo top_cpu = 2;    // Top CPU consuming processes
+  repeated ProcessInfo top_memory = 3; // Top memory consuming processes
+  repeated ProcessInfo top_gpu = 4;    // Top GPU using processes (optional)
+  int32 total_count = 5;
+  int32 running_count = 6;
+  int32 sleeping_count = 7;
+}
+
+message ProcessInfo {
+  uint32 pid = 1;
+  uint32 ppid = 2;
+  string name = 3;
+  optional string command = 4;
+  string state = 5;
+  double cpu_percent = 6;
+  double memory_percent = 7;
+  uint64 memory_rss = 8;     // Resident Set Size in bytes
+  uint64 memory_virtual = 9; // Virtual memory size in bytes
+  uint32 num_threads = 10;
+  uint64 read_bytes = 11;
+  uint64 write_bytes = 12;
+  optional uint32 open_files = 13;
+  optional uint64 syscall_count = 14;
+  optional uint64 context_switches = 15;
+  optional uint64 gpu_memory = 16;      // GPU memory usage if applicable
+  optional double gpu_utilization = 17; // GPU utilization if applicable
+
+  // ========================================================================
+  // Deadlock Detection Fields
+  // ========================================================================
+  optional string wait_channel = 18; // Kernel wait channel (wchan)
+                                     // - what the process is waiting on
+  optional string wait_state = 19;   // D (uninterruptible), S (sleeping), R
+                                     // (running), Z (zombie), T (stopped)
+  optional uint64 wait_time_ms = 20; // Time spent in current state
+
+  repeated FileLock held_locks = 21;    // File locks held by this process
+  repeated FileLock waiting_locks = 22; // File locks this process is
+                                        // waiting for
+
+  optional uint32 blocked_threads = 23;          // Number of blocked threads
+  optional uint64 voluntary_ctx_switches = 24;   // Voluntary context switches #
+                                                 // (waiting for I/O)
+  optional uint64 involuntary_ctx_switches = 25; // Involuntary context switches
+                                                 // (preempted)
+
+  optional uint32 waiting_on_pid = 26; // PID this process is blocked by
+  repeated uint32 blocking_pids = 27;  // PIDs that are blocked by this process
+
+  optional string current_syscall = 28; // Current system call being executed
+  optional uint64 syscall_duration_ms = 29; // How long the syscall has been
+                                            // running
+
+  optional uint64 io_wait_time_ms = 30; // Time spent waiting for I/O
+  optional uint64 cpu_time_delta = 31;  // Change in CPU time since last
+                                        // sample (0 = no progress)
+}
+
+message FileLock {
+  string path = 1;      // File path being locked
+  string lock_type = 2; // "READ", "WRITE", "ADVISORY", "MANDATORY"
+  uint64 inode = 3;     // File inode number
+  uint32 pid = 4;       // Process holding/waiting for the lock
+}

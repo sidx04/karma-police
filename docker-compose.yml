@@ -1,0 +1,114 @@
+services:
+  system`-eye:
+    build:
+      context: .
+      dockerfile: Dockerfile.system`-eye
+    container_name: system`-eye
+    ports:
+      - "8080:8080"  # Web UI
+      - "50051:50051"  # gRPC
+    networks:
+      - system`-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # GPU access (requires NVIDIA Container Toolkit)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility, compute]
+    # Share /tmp for guardian log access
+    volumes:
+      - /tmp:/tmp:rw
+
+  system`-guardian:
+    build:
+      context: .
+      dockerfile: Dockerfile.system`-guardian
+    container_name: system`-guardian
+    depends_on:
+      - system`-eye
+    environment:
+      - system`_EYE_HOST=system`-eye
+      - system`_EYE_PORT=50051
+    networks:
+      - system`-net
+    restart: unless-stopped
+    pid: "container:system`-eye"  # Share PID namespace with system`-eye for healing
+    cap_add:
+      - SYS_PTRACE  # Allow process inspection/manipulation
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Share /tmp for guardian log access
+    volumes:
+      - /tmp:/tmp:rw
+
+  chat-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.chat-server
+    container_name: chat-server
+    depends_on:
+      - system`-eye
+    environment:
+      - OPENAI_API_KEY=a
+      - PORT=3000
+    ports:
+      - "3000:3000"  # AI Chat API
+    networks:
+      - system`-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  system`-brain:
+    build:
+      context: .
+      dockerfile: Dockerfile.system`-brain
+    container_name: system`-brain
+    depends_on:
+      - system`-eye
+    ports:
+      - "5000:5000"  # ML Classification API
+    networks:
+      - system`-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  system`-net:
+    driver: bridge

@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>System's Eye - System Monitor</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><path d='M12 5C7 5 2.73 8.11 1 12.5C2.73 16.89 7 20 12 20C17 20 21.27 16.89 23 12.5C21.27 8.11 17 5 12 5Z' stroke='%233b82f6' stroke-width='2'/><circle cx='12' cy='12.5' r='3.5' stroke='%233b82f6' stroke-width='2'/><circle cx='12' cy='12.5' r='1.5' fill='%233b82f6'/></svg>"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/static/css/style.css?v=2" />
+        <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    </head>
+
+    <body>
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="branding">
+                <h1>
+                    <span class="eye-icon">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 5C7 5 2.73 8.11 1 12.5C2.73 16.89 7 20 12 20C17 20 21.27 16.89 23 12.5C21.27 8.11 17 5 12 5Z"
+                                stroke="#93c5fd"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+                            <circle
+                                cx="12"
+                                cy="12.5"
+                                r="3.5"
+                                stroke="#93c5fd"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+                            <circle cx="12" cy="12.5" r="1.5" fill="#93c5fd" />
+                        </svg>
+                    </span>
+                    System's Eye
+                </h1>
+                <span>|</span>
+                <span>System Monitor</span>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-dot"></span>
+                    <span>Live</span>
+                </div>
+                <div class="status-item">
+                    <span id="last-update">Connecting...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Section 1: ML Workload Classification -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="ml-header">
+                        <i class="ph ph-brain"></i>
+                        <div class="section-title">
+                            ML Workload Classification
+                        </div>
+                    </div>
+                </div>
+                <div class="grid-4">
+                    <div class="widget">
+                        <div class="widget-header">Current Workload</div>
+                        <div
+                            class="widget-value"
+                            id="ml-workload"
+                            style="font-size: 20px"
+                        >
+                            --
+                        </div>
+                        <div class="widget-subtitle" id="ml-workload-subtitle">
+                            Initializing...
+                        </div>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">Confidence</div>
+                        <div class="widget-value" id="ml-confidence">--</div>
+                        <div class="progress-bar">
+                            <div
+                                class="progress-fill"
+                                id="ml-confidence-bar"
+                                style="width: 0%"
+                            ></div>
+                        </div>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">Service Status</div>
+                        <div
+                            class="widget-value"
+                            style="font-size: 16px"
+                            id="ml-status"
+                        >
+                            Checking...
+                        </div>
+                        <div class="widget-subtitle" id="ml-status-detail">
+                            --
+                        </div>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">Last Updated</div>
+                        <div
+                            class="widget-value"
+                            style="font-size: 14px"
+                            id="ml-timestamp"
+                        >
+                            --
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: System Resources -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">System Resources</div>
+                </div>
+                <div class="grid-5">
+                    <!-- CPU Widget -->
+                    <div
+                        class="widget clickable"
+                        onclick="toggleDetailPanel('cpu')"
+                    >
+                        <div class="widget-header">CPU Usage</div>
+                        <div class="widget-value" id="cpu-overall">--</div>
+                        <div class="progress-bar">
+                            <div
+                                class="progress-fill"
+                                id="cpu-progress"
+                                style="width: 0%"
+                            ></div>
+                        </div>
+                        <div class="widget-subtitle" id="cpu-subtitle">
+                            Load: --
+                        </div>
+                        <div class="details-list" id="cpu-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Cores</span>
+                                <span class="detail-value">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Threads</span>
+                                <span class="detail-value">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Memory Widget -->
+                    <div
+                        class="widget clickable"
+                        onclick="toggleDetailPanel('memory')"
+                    >
+                        <div class="widget-header">Memory Usage</div>
+                        <div class="widget-value" id="memory-overall">--</div>
+                        <div class="progress-bar">
+                            <div
+                                class="progress-fill"
+                                id="memory-progress"
+                                style="width: 0%"
+                            ></div>
+                        </div>
+                        <div class="widget-subtitle" id="memory-subtitle">
+                            -- / -- GB
+                        </div>
+                        <div class="details-list" id="memory-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Used</span>
+                                <span class="detail-value">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Available</span>
+                                <span class="detail-value">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Disk Widget -->
+                    <div
+                        class="widget clickable"
+                        onclick="toggleDetailPanel('disk')"
+                    >
+                        <div class="widget-header">Disk I/O</div>
+                        <div class="widget-value" id="disk-overall">--</div>
+                        <div class="widget-subtitle">
+                            Read: <span id="disk-read">--</span>
+                        </div>
+                        <div class="widget-subtitle">
+                            Write: <span id="disk-write">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Network Widget -->
+                    <div
+                        class="widget clickable"
+                        onclick="toggleDetailPanel('network')"
+                    >
+                        <div class="widget-header">Network</div>
+                        <div class="widget-value" id="network-overall">--</div>
+                        <div class="widget-subtitle">
+                            RX: <span id="network-rx">--</span>
+                        </div>
+                        <div class="widget-subtitle">
+                            TX: <span id="network-tx">--</span>
+                        </div>
+                    </div>
+
+                    <!-- GPU Widget -->
+                    <div class="widget clickable" id="gpu-widget" onclick="toggleDetailPanel('gpu')">
+                        <div class="widget-header">GPU Usage</div>
+                        <div class="widget-value" id="gpu-overall">--</div>
+                        <div class="progress-bar">
+                            <div
+                                class="progress-fill"
+                                id="gpu-progress"
+                                style="width: 0%"
+                            ></div>
+                        </div>
+                        <div class="widget-subtitle" id="gpu-subtitle">
+                            Utilization
+                        </div>
+                        <div class="details-list" id="gpu-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Memory</span>
+                                <span class="detail-value">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Temperature</span>
+                                <span class="detail-value">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CPU Detail Panel -->
+                    <div class="detail-panel" id="cpu-detail-panel">
+                        <div class="detail-panel-header">CPU Details</div>
+                        <div class="detail-grid">
+                            <div>
+                                <div style="margin-bottom: 16px">
+                                    <div
+                                        style="
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            margin-bottom: 8px;
+                                        "
+                                    >
+                                        CPU Usage History
+                                    </div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="cpuChart"></canvas>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div
+                                        style="
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            margin-bottom: 8px;
+                                        "
+                                    >
+                                        Per-Core Usage
+                                    </div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="cpuCoreChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 12px;
+                                    "
+                                >
+                                    System Information
+                                </div>
+                                <div class="metric-list">
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Physical Cores</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Logical Processors</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Load Average (1m)</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Load Average (5m)</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Load Average (15m)</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Memory Detail Panel -->
+                    <div class="detail-panel" id="memory-detail-panel">
+                        <div class="detail-panel-header">Memory Details</div>
+                        <div class="detail-grid">
+                            <div>
+                                <div style="margin-bottom: 16px">
+                                    <div
+                                        style="
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            margin-bottom: 8px;
+                                        "
+                                    >
+                                        Memory Usage History
+                                    </div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="memoryChart"></canvas>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div
+                                        style="
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            margin-bottom: 8px;
+                                        "
+                                    >
+                                        Memory Breakdown
+                                    </div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="memoryPieChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 12px;
+                                    "
+                                >
+                                    Memory Statistics
+                                </div>
+                                <div class="metric-list">
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Total Memory</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Used Memory</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Available Memory</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Cached</span>
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label"
+                                            >Buffers</span
+                                        >
+                                        <span class="metric-value">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Disk Detail Panel -->
+                    <div class="detail-panel" id="disk-detail-panel">
+                        <div class="detail-panel-header">Disk I/O Details</div>
+                        <div class="detail-grid">
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 8px;
+                                    "
+                                >
+                                    Disk I/O Activity
+                                </div>
+                                <div class="chart-wrapper">
+                                    <canvas id="diskChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 12px;
+                                    "
+                                >
+                                    Disk Devices
+                                </div>
+                                <table id="disk-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Device</th>
+                                            <th>Read</th>
+                                            <th>Write</th>
+                                            <th>Latency</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Detail Panel -->
+                    <div class="detail-panel" id="network-detail-panel">
+                        <div class="detail-panel-header">Network Details</div>
+                        <div class="detail-grid">
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 8px;
+                                    "
+                                >
+                                    Network Traffic
+                                </div>
+                                <div class="chart-wrapper">
+                                    <canvas id="networkChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 12px;
+                                    "
+                                >
+                                    Network Interfaces
+                                </div>
+                                <table id="network-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Interface</th>
+                                            <th>RX Bytes</th>
+                                            <th>TX Bytes</th>
+                                            <th>Errors</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GPU Detail Panel -->
+                    <div class="detail-panel" id="gpu-detail-panel">
+                        <div class="detail-panel-header">GPU Details</div>
+                        <div class="detail-grid">
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 12px;
+                                    "
+                                >
+                                    GPU Information
+                                </div>
+                                <div class="metric-list">
+                                    <div class="metric-item">
+                                        <span class="metric-label">GPU Name</span>
+                                        <span class="metric-value" id="gpu-name">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Utilization</span>
+                                        <span class="metric-value" id="gpu-util-detail">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Memory Used</span>
+                                        <span class="metric-value" id="gpu-mem-used">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Memory Total</span>
+                                        <span class="metric-value" id="gpu-mem-total">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Memory %</span>
+                                        <span class="metric-value" id="gpu-mem-percent">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div
+                                    style="
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 12px;
+                                    "
+                                >
+                                    Thermal & Power
+                                </div>
+                                <div class="metric-list">
+                                    <div class="metric-item">
+                                        <span class="metric-label">Temperature</span>
+                                        <span class="metric-value" id="gpu-temp-detail">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Power Usage</span>
+                                        <span class="metric-value" id="gpu-power-detail">--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Fan Speed</span>
+                                        <span class="metric-value" id="gpu-fan-speed">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Process Monitor -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">Process Monitor</div>
+                    <div class="status-bar">
+                        <span
+                            >Total: <strong id="process-total">--</strong></span
+                        >
+                        <span
+                            >Running:
+                            <strong id="process-running">--</strong></span
+                        >
+                        <span
+                            >Sleeping:
+                            <strong id="process-sleeping">--</strong></span
+                        >
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <!-- Top CPU Consumers -->
+                    <div class="card">
+                        <div class="card-header">Top CPU Consumers</div>
+                        <table id="process-cpu-table">
+                            <thead>
+                                <tr>
+                                    <th>PID</th>
+                                    <th>Name</th>
+                                    <th>CPU %</th>
+                                    <th>Memory %</th>
+                                    <th>State</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1234</td>
+                                    <td>python3</td>
+                                    <td>45.2%</td>
+                                    <td>12.8%</td>
+                                    <td>Running</td>
+                                </tr>
+                                <tr>
+                                    <td>5678</td>
+                                    <td>node</td>
+                                    <td>32.1%</td>
+                                    <td>8.4%</td>
+                                    <td>Running</td>
+                                </tr>
+                                <tr>
+                                    <td>9012</td>
+                                    <td>chrome</td>
+                                    <td>18.7%</td>
+                                    <td>15.2%</td>
+                                    <td>Sleeping</td>
+                                </tr>
+                                <tr>
+                                    <td>3456</td>
+                                    <td>postgres</td>
+                                    <td>12.4%</td>
+                                    <td>6.1%</td>
+                                    <td>Running</td>
+                                </tr>
+                                <tr>
+                                    <td>7890</td>
+                                    <td>docker</td>
+                                    <td>8.9%</td>
+                                    <td>4.3%</td>
+                                    <td>Sleeping</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Top Memory Consumers -->
+                    <div class="card">
+                        <div class="card-header">Top Memory Consumers</div>
+                        <table id="process-memory-table">
+                            <thead>
+                                <tr>
+                                    <th>PID</th>
+                                    <th>Name</th>
+                                    <th>Memory %</th>
+                                    <th>RSS</th>
+                                    <th>State</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>5678</td>
+                                    <td>node</td>
+                                    <td>15.2%</td>
+                                    <td>2.4 GB</td>
+                                    <td>Running</td>
+                                </tr>
+                                <tr>
+                                    <td>1234</td>
+                                    <td>python3</td>
+                                    <td>12.8%</td>
+                                    <td>2.0 GB</td>
+                                    <td>Running</td>
+                                </tr>
+                                <tr>
+                                    <td>9012</td>
+                                    <td>chrome</td>
+                                    <td>11.6%</td>
+                                    <td>1.8 GB</td>
+                                    <td>Sleeping</td>
+                                </tr>
+                                <tr>
+                                    <td>3456</td>
+                                    <td>postgres</td>
+                                    <td>8.4%</td>
+                                    <td>1.3 GB</td>
+                                    <td>Running</td>
+                                </tr>
+                                <tr>
+                                    <td>2345</td>
+                                    <td>java</td>
+                                    <td>7.2%</td>
+                                    <td>1.1 GB</td>
+                                    <td>Sleeping</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Guardian Events (Deadlocks & Anomalies) -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="ph ph-shield-check"></i>
+                        Guardian Events
+                    </div>
+                    <div class="status-bar">
+                        <span>Deadlocks: <strong id="events-deadlocks">--</strong></span>
+                        <span>Anomalies: <strong id="events-anomalies">--</strong></span>
+                        <span>Healings: <strong id="events-healings">--</strong></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">Recent Detection & Healing Events</div>
+                    <table id="guardian-events-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Event</th>
+                                <th>Details</th>
+                                <th>PIDs</th>
+                                <th>Resolution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="events-empty">
+                                    Loading events...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Component Container -->
+        <div id="chat-component"></div>
+
+        <script src="/static/js/app.js"></script>
+        <script>
+            let activePanel = null;
+
+            function toggleDetailPanel(panelName) {
+                const panel = document.getElementById(
+                    panelName + "-detail-panel",
+                );
+                const allPanels = document.querySelectorAll(".detail-panel");
+                const allWidgets =
+                    document.querySelectorAll(".widget.clickable");
+
+                // If clicking the same panel, close it
+                if (activePanel === panelName) {
+                    panel.classList.remove("active");
+                    allWidgets.forEach((w) => w.classList.remove("active"));
+                    activePanel = null;
+                } else {
+                    // Close all panels
+                    allPanels.forEach((p) => p.classList.remove("active"));
+                    allWidgets.forEach((w) => w.classList.remove("active"));
+
+                    // Open clicked panel
+                    panel.classList.add("active");
+                    event.currentTarget.classList.add("active");
+                    activePanel = panelName;
+                }
+            }
+        </script>
+        <script>
+            fetch('/static/components/chat-panel.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('chat-component').innerHTML = html;
+                    return import('/static/js/ChatPanel.js');
+                })
+                .catch(error => console.error('Error loading chat component:', error));
+        </script>
+    </body>
+</html>

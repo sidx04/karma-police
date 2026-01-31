@@ -1,0 +1,46 @@
+# Ubuntu base image for System Eye
+FROM ubuntu:22.04
+
+# Install system dependencies
+RUN apt-get update -y && \
+    apt-get install -y \
+    wget \
+    tar \
+    git \
+    gcc \
+    make \
+    curl \
+    libc6-dev \
+    && apt-get clean
+
+# Install Go 1.21 (Ubuntu has 1.17 which is too old)
+RUN wget -q https://go.dev/dl/go1.21.13.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.21.13.linux-amd64.tar.gz && \
+    rm go1.21.13.linux-amd64.tar.gz
+
+# Set Go environment
+ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+ENV CGO_ENABLED=1
+
+# Set working directory
+WORKDIR /app
+
+# Copy system-eye source
+COPY src/system-eye/ /app/
+
+# Download Go dependencies
+RUN go mod download
+
+# Build system-eye
+RUN go build -o system-eye cmd/system-eye/main.go
+
+# Expose ports
+EXPOSE 8080 50051
+
+# Health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/api/health || exit 1
+
+# Run system-eye with gRPC and web enabled
+CMD ["./system-eye", "--gpu=false", "--grpc", "--web", "--verbose"]

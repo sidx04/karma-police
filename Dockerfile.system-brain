@@ -1,0 +1,26 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY src/system-brain/requirements.txt /app/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY src/system-brain/src/*.py /app/
+
+# Copy trained models
+COPY src/system-brain/models /models
+
+EXPOSE 5000
+
+# Run the live classifier service
+CMD ["python", "live_classifier_service.py", "--models-path", "/models", "--eye-api", "http://system-eye:8080/api/metrics", "--port", "5000"]

@@ -1,0 +1,454 @@
+[
+  {
+    "timestamp": "2025-09-29 19:43:26.003260",
+    "samples": 60,
+    "accuracy": 1.0,
+    "progressive": false
+  },
+  {
+    "timestamp": "2025-09-29 19:47:16.280386",
+    "samples": 60,
+    "accuracy": 1.0,
+    "progressive": false
+  },
+  {
+    "timestamp": "2025-09-29 19:58:38.567997",
+    "samples": 60,
+    "accuracy": 1.0,
+    "progressive": true
+  },
+  {
+    "timestamp": "2025-09-29 20:03:11.272754",
+    "samples": 60,
+    "accuracy": 1.0,
+    "progressive": true
+  },
+  {
+    "timestamp": "2025-09-29 20:16:44.313162",
+    "samples": 60,
+    "accuracy": 1.0,
+    "progressive": true
+  },
+  {
+    "timestamp": "2025-09-29 20:22:46.191875",
+    "samples": 60,
+    "accuracy": 1.0,
+    "progressive": true
+  },
+  {
+    "timestamp": "2025-09-29 20:27:37.632496",
+    "samples": 120,
+    "accuracy": 1.0,
+    "progressive": true
+  },
+  {
+    "timestamp": "2025-09-29 20:33:13.189545",
+    "samples": 180,
+    "accuracy": 1.0,
+    "progressive": true
+  },
+  {
+    "timestamp": "2025-09-30T08:17:51.719313",
+    "accuracy": 0.25,
+    "n_samples": 36,
+    "model_info": {
+      "n_estimators": 450,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T08:51:23.017533",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 500,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T08:51:48.126044",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 550,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T08:52:24.858548",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 600,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T08:53:20.272170",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 650,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T08:53:47.976928",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 700,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T08:54:24.139468",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 750,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T08:55:11.639339",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 800,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T09:13:35.791877",
+    "accuracy": 1.0,
+    "n_samples": 180,
+    "model_info": {
+      "n_estimators": 850,
+      "n_features": 50
+    }
+  },
+  {
+    "timestamp": "2025-09-30T10:27:38.231522",
+    "accuracy": 1.0,
+    "n_samples": 216,
+    "progressive": false,
+    "model_info": {
+      "n_estimators": 100,
+      "n_features": 120
+    }
+  },
+  {
+    "timestamp": "2025-09-30T13:32:33.376494",
+    "accuracy": 1.0,
+    "n_samples": 216,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 25
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 50
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-09-30T13:57:28.059632",
+    "accuracy": 1.0,
+    "n_samples": 252,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 25
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 50
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-09-30T14:17:59.072762",
+    "accuracy": 1.0,
+    "n_samples": 288,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 28
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 57
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-09-30T14:38:37.700822",
+    "accuracy": 1.0,
+    "n_samples": 324,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 32
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 64
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-09-30T18:30:15.817404",
+    "accuracy": 1.0,
+    "n_samples": 360,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 36
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 72
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-09-30T19:34:23.993035",
+    "accuracy": 1.0,
+    "n_samples": 396,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 39
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 79
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-01T15:20:57.154834",
+    "accuracy": 1.0,
+    "n_samples": 432,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 43
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 86
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-01T16:54:29.624396",
+    "accuracy": 1.0,
+    "n_samples": 468,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 46
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 93
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-01T18:07:28.542757",
+    "accuracy": 1.0,
+    "n_samples": 504,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 50
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 100
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-01T19:07:46.524714",
+    "accuracy": 1.0,
+    "validation_accuracy": 1.0,
+    "train_accuracy": 1.0,
+    "full_training_accuracy": 1.0,
+    "n_samples": 540,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 50
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 100
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-01T20:02:05.677348",
+    "accuracy": 1.0,
+    "validation_accuracy_mean": 1.0,
+    "validation_accuracy_std": 0.0,
+    "train_accuracy_mean": 1.0,
+    "train_accuracy_std": 0.0,
+    "full_training_accuracy": 1.0,
+    "n_samples": 576,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 150
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 200
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-01T21:57:50.752851",
+    "accuracy": 1.0,
+    "validation_accuracy_mean": 1.0,
+    "validation_accuracy_std": 0.0,
+    "train_accuracy_mean": 1.0,
+    "train_accuracy_std": 0.0,
+    "full_training_accuracy": 1.0,
+    "n_samples": 612,
+    "progressive": false,
+    "model_info": {
+      "type": "ensemble",
+      "n_features_original": 120,
+      "n_features_selected": 60,
+      "ensemble_components": {
+        "xgboost": {
+          "type": "tree_ensemble",
+          "n_estimators": 150
+        },
+        "random_forest": {
+          "type": "tree_ensemble",
+          "n_estimators": 200
+        },
+        "svm": {
+          "type": "svm",
+          "kernel": "rbf"
+        }
+      }
+    }
+  }
+]
