@@ -13,6 +13,7 @@ from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.request
 import numpy as np
+import os
 
 from feature_extractor import extract_features
 
@@ -65,9 +66,12 @@ class LiveClassifier:
     """Continuously classifies workloads from System's Eye telemetry"""
 
     def __init__(
-        self, models_path="/models", eye_api="http://localhost:8080/api/metrics"
+        self,models_path="/models", eye_api="http://localhost:8080/api/metrics"
     ):
-        self.models_path = Path(models_path)
+        brain_path = Path.cwd() / "system-brain"
+        print(f"brain_path: {brain_path}")
+        self.models_path = brain_path / models_path.lstrip("/")
+        print(f"self.models_path: {self.models_path}")
         self.eye_api = eye_api
         self.model = None
         self.scaler = None
