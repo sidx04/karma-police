@@ -33,10 +33,12 @@ RUN pip3 install --no-cache-dir \
 
 # Generate Python gRPC stubs
 RUN python3 -m grpc_tools.protoc \
-    -I/app/proto \
+    --proto_path=/app \
     --python_out=/app \
     --grpc_python_out=/app \
-    /app/proto/metrics.proto
+    /app/api/proto/metrics.proto
+
+RUN touch /app/api/__init__.py /app/api/proto/__init__.py
 
 # Make health check executable
 RUN chmod +x /app/health_check.py
