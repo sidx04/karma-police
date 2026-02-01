@@ -48,6 +48,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.system-brain
+    image: system-brain:latest 
     container_name: system-brain
     depends_on:
       system-eye:
