@@ -20,6 +20,16 @@ import xgboost as xgb
 
 from feature_extractor import extract_features
 from workload_executor import RealWorkloadExecutor
+from sklearn.utils._tags import _DEFAULT_TAGS
+
+# Fix for Scikit-Learn 1.6+ VotingClassifier AttributeError
+def patch_voting_classifier():
+    if not hasattr(VotingClassifier, "__sklearn_tags__"):
+        def __sklearn_tags__(self):
+            return _DEFAULT_TAGS
+        VotingClassifier.__sklearn_tags__ = __sklearn_tags__
+
+patch_voting_classifier()
 
 
 def create_enhanced_model(n_samples, n_features, progressive=False):
@@ -78,7 +88,13 @@ def create_enhanced_model(n_samples, n_features, progressive=False):
         ('random_forest', rf_model),
         ('svm', svm_model)
     ], voting='hard', weights=[2, 2, 1])
-
+    
+    # Manually inject the required tags for 2026 compatibility 
+    # if the library is failing to resolve them via super()
+    if not hasattr(ensemble, "__sklearn_tags__"):
+        from sklearn.utils._tags import _DEFAULT_TAGS
+        ensemble.__sklearn_tags__ = lambda: _DEFAULT_TAGS
+    
     print(f"[MODEL] Ensemble components:")
     print(f"  - XGBoost: {xgb_model.n_estimators} estimators, lr={xgb_model.learning_rate}")
     print(f"  - Random Forest: {rf_model.n_estimators} trees, max_features={rf_model.max_features}")
