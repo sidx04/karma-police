@@ -294,10 +294,11 @@ case "$1" in
         docker run --rm \
             --name system-brain-training \
             --gpus all \
+            --platform "$DOCKER_PLATFORM" \
             -v "$SRC_DIR:/workspace:ro" \
             -v "$DATA_DIR:/data:rw" \
             -v "$MODELS_DIR:/models:rw" \
-            pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime \
+            pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime \
             bash -c "
                 set -e
                 echo '[SETUP] Installing required packages...'
