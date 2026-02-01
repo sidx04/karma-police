@@ -1,0 +1,69 @@
+# System Guardian Configuration - Docker Deployment
+# Self-healing system configuration for deadlock detection and anomaly mitigation
+
+# gRPC connection to System Eye monitoring system
+grpc:
+  # Address of System Eye gRPC server (container name in docker-compose)
+  server: "system-eye:50051"
+
+  # Reconnection interval in seconds if connection lost
+  reconnect_interval: 5
+
+# Deadlock detection settings
+deadlock_detector:
+  min_wait_time_ms: 2000  # Lowered from 5000ms for faster detection
+  critical_wait_time_ms: 30000
+
+# Anomaly detection settings
+anomaly_detector:
+  cpu_spike_threshold: 15.0  # Lowered - container sees host CPU (20+ cores)
+  cpu_spike_duration_samples: 3
+  memory_growth_mb_per_min: 100
+  memory_leak_samples: 5
+  io_wait_threshold_ms: 1000
+  history_size: 100
+
+# Self-healing action settings
+self_healer:
+  enabled: true
+  dry_run: false  # PRODUCTION MODE
+  max_restarts_per_hour: 3
+  cooldown_minutes: 5
+  protected_processes:
+    - "systemd"
+    - "init"
+    - "sshd"
+    - "system-eye"
+    - "system-guardian"
+
+# Detection and monitoring settings
+detection:
+  check_interval_seconds: 10
+  enable_deadlock_detection: true
+  enable_anomaly_detection: true
+
+# Logging configuration
+logging:
+  level: "INFO"
+  file: "/tmp/guardian.log"  # Docker writable location
+  console: true
+  max_size_mb: 50
+  backup_count: 5
+
+# Alert settings
+alerts:
+  enabled: true
+  channels:
+    syslog:
+      enabled: false  # Disabled in container
+      facility: "daemon"
+    webhook:
+      enabled: false
+      url: ""
+      method: "POST"
+    email:
+      enabled: false
+      smtp_server: ""
+      smtp_port: 587
+      from_address: ""
+      to_addresses: []

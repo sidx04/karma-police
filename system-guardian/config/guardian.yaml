@@ -1,0 +1,118 @@
+# System Guardian Configuration
+# Self-healing system configuration for deadlock detection and anomaly mitigation
+
+# gRPC connection to System Eye monitoring system
+grpc:
+  # Address of System Eye gRPC server
+  server: "localhost:50051"
+
+  # Reconnection interval in seconds if connection lost
+  reconnect_interval: 5
+
+# Deadlock detection settings
+deadlock_detector:
+  # Minimum wait time (ms) to consider a process as potentially deadlocked
+  # Processes waiting less than this are considered transient
+  min_wait_time_ms: 5000
+
+  # Wait time (ms) threshold for critical severity deadlocks
+  critical_wait_time_ms: 30000
+
+# Anomaly detection settings
+anomaly_detector:
+  # CPU spike detection
+  # Overall CPU percentage threshold to trigger spike detection
+  cpu_spike_threshold: 80.0
+
+  # Number of consecutive samples above threshold to confirm spike
+  cpu_spike_duration_samples: 3
+
+  # Memory leak detection
+  # Memory growth rate (MB per minute) to trigger leak detection
+  memory_growth_mb_per_min: 100
+
+  # Number of samples to analyze for leak pattern
+  memory_leak_samples: 5
+
+  # I/O bottleneck detection
+  # Wait time (ms) for processes in uninterruptible sleep to trigger alert
+  io_wait_threshold_ms: 1000
+
+  # History size for trend analysis
+  history_size: 100
+
+# Self-healing action settings
+self_healer:
+  # Enable automatic healing (set false to only detect and log)
+  enabled: true
+
+  # Dry-run mode: detect and plan actions but don't execute them
+  dry_run: false  # PRODUCTION MODE - ACTUALLY PERFORMS HEALING ACTIONS
+
+  # Maximum number of restart/kill actions per PID per hour
+  max_restarts_per_hour: 3
+
+  # Cooldown period (minutes) between actions on same PID
+  cooldown_minutes: 5
+
+  # Protected processes that will NEVER be killed/restarted
+  protected_processes:
+    - "systemd"
+    - "init"
+    - "sshd"
+    - "system-eye"
+    - "system-guardian"
+    - "dbus-daemon"
+    - "NetworkManager"
+
+# Detection and monitoring settings
+detection:
+  # How often to check for deadlocks and anomalies (seconds)
+  check_interval_seconds: 10
+
+  # Enable/disable specific detection types
+  enable_deadlock_detection: true
+  enable_anomaly_detection: true
+
+# Logging configuration
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # Log file path
+  file: "/var/log/system-guardian/guardian.log"
+
+  # Enable console output
+  console: true
+
+  # Maximum log file size (MB) before rotation
+  max_size_mb: 50
+
+  # Number of backup log files to keep
+  backup_count: 5
+
+# Alert settings (for future alert manager)
+alerts:
+  # Enable alerting
+  enabled: true
+
+  # Alert channels
+  channels:
+    # Syslog integration (logs to /var/log/syslog)
+    syslog:
+      enabled: true
+      facility: "daemon"
+
+    # Webhook for external integrations
+    webhook:
+      enabled: false
+      url: ""
+      method: "POST"
+
+    # Email notifications
+    email:
+      enabled: false
+      smtp_server: ""
+      smtp_port: 587
+      from_address: ""
+      to_addresses: []

@@ -1,0 +1,49 @@
+# Ubuntu base image
+FROM ubuntu:22.04
+
+# Install Python and dependencies using apt
+RUN apt-get update && \
+    apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    gcc \
+    protobuf-compiler \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy system-guardian source
+COPY system-guardian/ /app/
+
+# Copy proto files for gRPC
+COPY system-eye/api/proto/ /app/proto/
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir \
+    grpcio \
+    grpcio-tools \
+    protobuf \
+    pyyaml \
+    networkx \
+    requests \
+    psutil
+
+# Generate Python gRPC stubs
+RUN python3 -m grpc_tools.protoc \
+    -I/app/proto \
+    --python_out=/app \
+    --grpc_python_out=/app \
+    /app/proto/metrics.proto
+
+# Make health check executable
+RUN chmod +x /app/health_check.py
+
+# Health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=3 \
+    CMD python3 /app/health_check.py || exit 1
+
+# Run guardian daemon with Docker config
+CMD ["python3", "guardian_daemon.py", "--config", "config/guardian-docker.yaml"]

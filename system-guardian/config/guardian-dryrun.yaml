@@ -1,0 +1,45 @@
+# System Guardian Configuration - DRY RUN MODE
+# Use this config for testing without actually performing healing actions
+
+grpc:
+  server: "localhost:50051"
+  reconnect_interval: 5
+
+deadlock_detector:
+  min_wait_time_ms: 2000  # Lower threshold for testing
+  critical_wait_time_ms: 10000
+
+anomaly_detector:
+  cpu_spike_threshold: 70.0  # Lower threshold for easier testing
+  cpu_spike_duration_samples: 2
+  memory_growth_mb_per_min: 50
+  memory_leak_samples: 3
+  io_wait_threshold_ms: 500
+  history_size: 50
+
+self_healer:
+  enabled: true
+  dry_run: true  # DRY RUN - no actual actions executed
+  max_restarts_per_hour: 10  # Higher limit for testing
+  cooldown_minutes: 1  # Shorter cooldown for testing
+  protected_processes:
+    - "systemd"
+    - "init"
+    - "sshd"
+    - "system-eye"
+    - "system-guardian"
+
+detection:
+  check_interval_seconds: 5  # More frequent checks for testing
+  enable_deadlock_detection: true
+  enable_anomaly_detection: true
+
+logging:
+  level: "DEBUG"  # Verbose logging for testing
+  file: "/tmp/system-guardian-dryrun.log"
+  console: true
+  max_size_mb: 10
+  backup_count: 2
+
+alerts:
+  enabled: false

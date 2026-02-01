@@ -32,4 +32,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1
 
 # Run system-eye
-CMD ["./system-eye", "--gpu=false", "--grpc", "--web", "--verbose"]
+CMD ["./system-eye", "--gpu=true", "--grpc", "--web", "--verbose"]
