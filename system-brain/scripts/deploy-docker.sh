@@ -256,6 +256,7 @@ case "$1" in
                 pip install --no-cache-dir scikit-learn numpy==1.26.4 psutil xgboost
                 
                 echo '[SETUP] Copying Python modules...'
+                mkdir -p /app
                 cp /workspace/*.py /app/
                 
                 echo '[SETUP] Starting telemetry collection'
@@ -291,6 +292,7 @@ case "$1" in
                 pip install --no-cache-dir scikit-learn numpy==1.26.4 psutil xgboost
                 
                 echo '[SETUP] Copying Python modules...'
+                mkdir -p /app
                 cp /workspace/*.py /app/
                 
                 echo '[INFO] Starting model training'
@@ -321,6 +323,7 @@ case "$1" in
                 pip install --no-cache-dir scikit-learn numpy==1.26.4 psutil
                 
                 echo '[SETUP] Copying Python modules...'
+                mkdir -p /app
                 cp /workspace/*.py /app/
                 
                 echo '[INFO] Running model tests'
@@ -357,6 +360,7 @@ case "$1" in
                 pip install --no-cache-dir scikit-learn numpy==1.26.4 psutil xgboost
                 
                 echo '[SETUP] Copying Python modules...'
+                mkdir -p /app
                 cp /workspace/*.py /app/
                 
                 echo '[PIPELINE] Starting telemetry collection'
@@ -389,6 +393,7 @@ case "$1" in
             bash -c "
                 set -e
                 pip install --no-cache-dir scikit-learn numpy==1.26.4 psutil flask
+                mkdir -p /app
                 cp /workspace/*.py /app/
                 cd /app
                 python live_classifier_service.py --models-path /models --port 5000
