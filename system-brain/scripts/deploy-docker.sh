@@ -400,28 +400,43 @@ case "$1" in
         log_header "RUNNING LIVE DEMO"
         check_prerequisites
         
+        # Use the same native ARM64 image that worked for training
+        IMAGE="nvcr.io/nvidia/pytorch:25.01-py3"
+        
         log_info "Starting live demo..."
+        
+        # Stop any existing demo to avoid port conflicts
+        docker rm -f system-brain-demo 2>/dev/null || true
+
         docker run -d \
             --name system-brain-demo \
             --gpus all \
+            --platform "$DOCKER_PLATFORM" \
             -v "$SRC_DIR:/workspace:ro" \
             -v "$MODELS_DIR:/models:ro" \
             -p 5000:5000 \
-            pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime \
+            $IMAGE \
             bash -c "
                 set -e
-                pip install --no-cache-dir scikit-learn numpy==1.26.4 psutil flask
+                echo '[SETUP] Installing dependencies...'
+                # CRITICAL: Force the same Scikit-Learn version as training
+                pip install --no-cache-dir --force-reinstall scikit-learn==1.5.2 numpy==1.26.4 psutil flask
+                
+                echo '[SETUP] Copying Python modules...'
                 mkdir -p /app
                 cp /workspace/*.py /app/
+                
+                echo '[INFO] Starting Flask API...'
                 cd /app
-                python live_classifier_service.py --models-path /models --port 5000
+                # Run the live classifier service
+                python -u live_classifier_service.py --models-path /models --port 5000
             "
         
         wait_for_container "demo" 60
         log_success "Demo started at http://localhost:5000"
         log_info "View logs with: $0 logs demo -f"
         ;;
-
+        
     "status")
         log_header "DEPLOYMENT STATUS"
         
