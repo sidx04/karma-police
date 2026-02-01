@@ -32,13 +32,18 @@ RUN pip3 install --no-cache-dir \
     psutil
 
 # Generate Python gRPC stubs
-RUN python3 -m grpc_tools.protoc \
-    --proto_path=/app/api/proto \
-    --python_out=/app \
-    --grpc_python_out=/app \
-    /app/api/proto/metrics.proto
+RUN cd /app && python3 -m grpc_tools.protoc \
+    --proto_path=api/proto \
+    --python_out=. \
+    --grpc_python_out=. \
+    api/proto/metrics.proto
 
+# Ensure all __init__.py files exist for proper package imports
 RUN touch /app/api/__init__.py /app/api/proto/__init__.py
+
+# Create __init__.py in api/proto that re-exports the generated modules
+RUN echo "from . import metrics_pb2" >> /app/api/proto/__init__.py && \
+    echo "from . import metrics_pb2_grpc" >> /app/api/proto/__init__.py
 
 # Make health check executable
 RUN chmod +x /app/health_check.py
