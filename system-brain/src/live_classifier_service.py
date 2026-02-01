@@ -26,15 +26,21 @@ class ClassificationResult:
         self.probabilities = {}
         self.timestamp = ""
         self.error = None
+        self.verified = False
+        self.parameter_count = None
+        self.parameter_count_human = "unknown"
         self.lock = threading.Lock()
 
-    def update(self, workload_type, confidence, probabilities, timestamp):
+    def update(self, workload_type, confidence, probabilities, timestamp, verified=False, parameter_count=None, parameter_count_human="unknown"):
         with self.lock:
             self.workload_type = workload_type
             self.confidence = confidence
             self.probabilities = probabilities
             self.timestamp = timestamp
             self.error = None
+            self.verified = verified
+            self.parameter_count = parameter_count
+            self.parameter_count_human = parameter_count_human
 
     def set_error(self, error_msg):
         with self.lock:
@@ -48,6 +54,9 @@ class ClassificationResult:
                 "probabilities": self.probabilities,
                 "timestamp": self.timestamp,
                 "error": self.error,
+                "verified": self.verified,
+                "parameter_count": self.parameter_count,
+                "parameter_count_human": self.parameter_count_human,
                 "service_status": "running",
             }
 
@@ -225,6 +234,71 @@ class LiveClassifier:
 
         return {cls: count / total_votes for cls, count in vote_counts.items()}
 
+    def _legacy_label_to_param_count(self, legacy_label):
+        """Map legacy CNN/Transformer labels to representative parameter counts."""
+        mapping = {
+            'transformer_training': 20_000_000_000,
+            'transformer_inference': 5_000_000_000,
+            'cnn_training': 50_000_000_000,
+            'cnn_inference': 500_000_000
+        }
+        return mapping.get(legacy_label, None)
+
+    def _param_count_to_bin_and_phase(self, param_count, legacy_label):
+        """Convert parameter count to bin name, range, and phase.
+        
+        Returns: (bin_name, range_str, phase_text, human_params)
+        """
+        def _human_readable(n):
+            if n is None:
+                return 'unknown'
+            if n >= 10**11:
+                return f"{n/10**9:.0f}B"
+            if n >= 10**9:
+                val = n/10**9
+                if abs(val - round(val)) < 1e-6:
+                    return f"{int(round(val))}B"
+                return f"{val:.1f}B"
+            if n >= 10**6:
+                return f"{n/10**6:.1f}M".rstrip('0').rstrip('.')
+            return str(n)
+
+        # Extract phase from legacy label
+        if 'training' in legacy_label:
+            phase_text = 'training'
+        elif 'inference' in legacy_label:
+            phase_text = 'inference'
+        else:
+            phase_text = 'unknown'
+
+        human_params = _human_readable(param_count)
+
+        # Bin the parameter count
+        if param_count is None:
+            return ('Unknown size', 'unknown', phase_text, human_params)
+        if param_count < 1_000_000_000:
+            bin_name, range_str = 'Very Small', '< 1B'
+        elif param_count < 10_000_000_000:
+            bin_name, range_str = 'Small', '1–10B'
+        elif param_count < 30_000_000_000:
+            bin_name, range_str = 'Medium', '10–30B'
+        elif param_count < 100_000_000_000:
+            bin_name, range_str = 'Large', '30–100B'
+        else:
+            bin_name, range_str = 'Very Large', '> 100B'
+
+        return (bin_name, range_str, phase_text, human_params)
+
+    def _build_classification_string(self, legacy_label):
+        """Build human-readable classification string from legacy label.
+        
+        Returns: (classification_string, param_count, human_params)
+        """
+        param_count = self._legacy_label_to_param_count(legacy_label)
+        bin_name, range_str, phase_text, human_params = self._param_count_to_bin_and_phase(param_count, legacy_label)
+        classification_string = f"{bin_name} model ({range_str} parameters) being {phase_text}"
+        return (classification_string, param_count, human_params)
+
     def apply_heuristic_corrections(
         self, workload_type, confidence, probabilities, eye_data
     ):
@@ -359,53 +433,60 @@ class LiveClassifier:
                         f"[DEBUG] GPU: {gpu_dev.get('utilization', 0)}% util, {gpu_dev.get('memory', {}).get('usage_percent', 0):.1f}% mem, {gpu_dev.get('temperature', 0)}°C"
                     )
 
-                # Classify
-                workload_type, confidence, probabilities = self.classify(brain_data)
+                # Classify using legacy model
+                legacy_workload_type, confidence, probabilities = self.classify(brain_data)
 
                 # Apply rule-based corrections to improve predictions
-                workload_type, confidence, probabilities = (
+                legacy_workload_type, confidence, probabilities = (
                     self.apply_heuristic_corrections(
-                        workload_type, confidence, probabilities, eye_data
+                        legacy_workload_type, confidence, probabilities, eye_data
                     )
                 )
 
-                # Check GPU utilization and memory threshold - if truly idle, don't classify
-                gpu_util = 0
-                gpu_mem_pct = 0
-                if "gpu" in eye_data and eye_data["gpu"] and eye_data["gpu"]["devices"]:
-                    gpu_util = eye_data["gpu"]["devices"][0].get("utilization", 0)
-                    gpu_mem_pct = (
-                        eye_data["gpu"]["devices"][0]
-                        .get("memory", {})
-                        .get("usage_percent", 0)
-                    )
+                # Translate legacy label to new parameter-count based classification
+                verified = False
+                classification_string = "unverified"
+                param_count = None
+                param_count_human = "unknown"
 
-                # Only reject if both GPU util AND memory are very low (truly idle)
-                if gpu_util < 3 and gpu_mem_pct < 5:
-                    workload_type = "insufficient_confidence"
-                    confidence = 0.0
-                    print(
-                        f"[CLASSIFY] GPU idle ({gpu_util}% util, {gpu_mem_pct:.1f}% mem) - No active workload detected"
-                    )
-                # Apply confidence threshold (lowered to 30% for better demo performance)
-                elif confidence < 0.30:
-                    workload_type = "insufficient_confidence"
-                    print(
-                        f"[CLASSIFY] Confidence too low ({confidence * 100:.2f}%) - Unable to classify workload"
-                    )
+                # Only emit human-readable classification if confidence >= 75%
+                if confidence >= 0.75:
+                    try:
+                        classification_string, param_count, param_count_human = self._build_classification_string(legacy_workload_type)
+                        verified = True
+                    except Exception:
+                        classification_string = "unverified"
+                        verified = False
+                else:
+                    # Low confidence: return unverified but preserve data for debugging
+                    try:
+                        param_count = self._legacy_label_to_param_count(legacy_workload_type)
+                        _, _, _, param_count_human = self._param_count_to_bin_and_phase(param_count, legacy_workload_type)
+                    except Exception:
+                        param_count_human = "unknown"
+                    classification_string = "unverified"
 
-                # Update result
+                # Update result with new classification and verification flag
                 timestamp = eye_data.get("timestamp", datetime.now().isoformat())
-                self.result.update(workload_type, confidence, probabilities, timestamp)
+                self.result.update(
+                    classification_string,
+                    confidence,
+                    probabilities,
+                    timestamp,
+                    verified=verified,
+                    parameter_count=param_count,
+                    parameter_count_human=param_count_human
+                )
 
                 classification_count += 1
 
+                status_mark = '[VERIFIED]' if verified else '[UNVERIFIED]'
                 if classification_count % 10 == 0:
                     print(
-                        f"[CLASSIFY] {classification_count}: {workload_type} ({confidence:.2%})"
+                        f"[CLASSIFY] {classification_count}: {status_mark} {classification_string} ({confidence:.2%})"
                     )
                 else:
-                    print(f"[CLASSIFY] {workload_type} ({confidence:.2%})")
+                    print(f"[CLASSIFY] {status_mark} {classification_string} ({confidence:.2%})")
 
                 # Sleep before next classification
                 time.sleep(3)  # Classify every 3 seconds
