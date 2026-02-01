@@ -89,11 +89,7 @@ def create_enhanced_model(n_samples, n_features, progressive=False):
         ('svm', svm_model)
     ], voting='hard', weights=[2, 2, 1])
     
-    # Manually inject the required tags for 2026 compatibility 
-    # if the library is failing to resolve them via super()
-    if not hasattr(ensemble, "__sklearn_tags__"):
-        from sklearn.utils._tags import _DEFAULT_TAGS
-        ensemble.__sklearn_tags__ = lambda: _DEFAULT_TAGS
+    ensemble._estimator_type = "classifier"
     
     print(f"[MODEL] Ensemble components:")
     print(f"  - XGBoost: {xgb_model.n_estimators} estimators, lr={xgb_model.learning_rate}")
