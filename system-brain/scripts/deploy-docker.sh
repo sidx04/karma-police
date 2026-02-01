@@ -400,26 +400,25 @@ case "$1" in
         log_header "RUNNING LIVE DEMO"
         check_prerequisites
         
-        # Use the same native ARM64 image that worked for training
         IMAGE="nvcr.io/nvidia/pytorch:25.01-py3"
+        CONTAINER_NAME="system-brain-demo"
         
         log_info "Starting live demo..."
         
-        # Stop any existing demo to avoid port conflicts
-        docker rm -f system-brain-demo 2>/dev/null || true
+        # Stop any existing demo
+        docker rm -f $CONTAINER_NAME 2>/dev/null || true
 
         docker run -d \
-            --name system-brain-demo \
+            --name $CONTAINER_NAME \
             --gpus all \
             --platform "$DOCKER_PLATFORM" \
+            --network host \
             -v "$SRC_DIR:/workspace:ro" \
             -v "$MODELS_DIR:/models:ro" \
-            -p 5000:5000 \
             $IMAGE \
             bash -c "
                 set -e
                 echo '[SETUP] Installing dependencies...'
-                # CRITICAL: Force the same Scikit-Learn version as training
                 pip install --no-cache-dir --force-reinstall scikit-learn==1.5.2 numpy==1.26.4 psutil flask
                 
                 echo '[SETUP] Copying Python modules...'
@@ -428,15 +427,35 @@ case "$1" in
                 
                 echo '[INFO] Starting Flask API...'
                 cd /app
-                # Run the live classifier service
+                # '0.0.0.0' isn't strictly necessary with host net, but good practice
                 python -u live_classifier_service.py --models-path /models --port 5000
             "
         
-        wait_for_container "demo" 60
-        log_success "Demo started at http://localhost:5000"
-        log_info "View logs with: $0 logs demo -f"
-        ;;
+        # --- WAIT LOGIC ---
+        log_info "Waiting for $CONTAINER_NAME to initialize..."
+        TIMEOUT=120
+        ELAPSED=0
+        while [ $ELAPSED -lt $TIMEOUT ]; do
+            if ! docker ps | grep -q $CONTAINER_NAME; then
+                log_error "Container crashed! Logs:"
+                docker logs $CONTAINER_NAME
+                exit 1
+            fi
+            
+            if docker logs $CONTAINER_NAME 2>&1 | grep -q "Running on"; then
+                log_success "✓ Demo is ready!"
+                break
+            fi
+            
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+            echo -n "."
+        done
         
+        log_success "Demo is running at http://localhost:5000"
+        log_info "To follow logs: $0 logs demo -f"
+        ;;
+
     "status")
         log_header "DEPLOYMENT STATUS"
         
