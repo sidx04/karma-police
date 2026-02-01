@@ -291,6 +291,8 @@ case "$1" in
         check_prerequisites
         
         log_info "Running model training in Docker container..."
+        IMAGE="nvcr.io/nvidia/pytorch:25.01-py3"
+
         docker run --rm \
             --name system-brain-training \
             --gpus all \
@@ -298,7 +300,7 @@ case "$1" in
             -v "$SRC_DIR:/workspace:ro" \
             -v "$DATA_DIR:/data:rw" \
             -v "$MODELS_DIR:/models:rw" \
-            pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime \
+            $IMAGE \
             bash -c "
                 set -e
                 echo '[SETUP] Installing required packages...'
@@ -360,13 +362,16 @@ case "$1" in
             FOLLOW_LOGS="-t"
         fi
         
-        docker run --rm $FOLLOW_LOGS \
-            --name system-brain-pipeline \
+        IMAGE="nvcr.io/nvidia/pytorch:25.01-py3"
+
+        docker run --rm \
+            --name system-brain-training \
             --gpus all \
+            --platform "$DOCKER_PLATFORM" \
             -v "$SRC_DIR:/workspace:ro" \
             -v "$DATA_DIR:/data:rw" \
             -v "$MODELS_DIR:/models:rw" \
-            nvcr.io/nvidia/pytorch:24.09-py3 \
+            $IMAGE \
             bash -c "
                 set -e
                 echo '[SETUP] Installing required packages...'
