@@ -26,17 +26,6 @@ MODELS_DIR="$SYSTEM_BRAIN_DIR/models"
 LOG_DIR="$SYSTEM_BRAIN_DIR/logs"
 DATA_DIR="$SYSTEM_BRAIN_DIR/data"
 
-# Auto-detect Architecture
-ARCH=$(uname -m)
-if [ "$ARCH" = "x86_64" ]; then
-    DOCKER_PLATFORM="linux/amd64"
-elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-    DOCKER_PLATFORM="linux/arm64"
-else
-    DOCKER_PLATFORM="linux/amd64" # Default fallback
-fi
-log_info "Detected architecture: $ARCH (Using platform: $DOCKER_PLATFORM)"
-
 # Ensure directories exist
 mkdir -p "$LOG_DIR" "$DATA_DIR" "$MODELS_DIR"
 
@@ -62,6 +51,17 @@ log_header() {
     echo -e "${WHITE}   $1   ${NC}"
     echo -e "${PURPLE}========================================${NC}\n"
 }
+
+# Auto-detect Architecture
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    DOCKER_PLATFORM="linux/amd64"
+elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+    DOCKER_PLATFORM="linux/arm64"
+else
+    DOCKER_PLATFORM="linux/amd64" # Default fallback
+fi
+log_info "Detected architecture: $ARCH (Using platform: $DOCKER_PLATFORM)"
 
 # Utility functions
 check_prerequisites() {
