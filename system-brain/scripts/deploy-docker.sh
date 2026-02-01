@@ -375,7 +375,7 @@ case "$1" in
             bash -c "
                 set -e
                 echo '[SETUP] Installing required packages...'
-                pip install --no-cache-dir scikit-learn numpy==1.26.4 psutil xgboost
+                pip install --no-cache-dir scikit-learn==1.5.2 numpy==1.26.4 psutil xgboost
                 
                 echo '[SETUP] Copying Python modules...'
                 mkdir -p /app
