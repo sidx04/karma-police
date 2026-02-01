@@ -20,16 +20,6 @@ import xgboost as xgb
 
 from feature_extractor import extract_features
 from workload_executor import RealWorkloadExecutor
-from sklearn.utils._tags import _DEFAULT_TAGS
-
-# Fix for Scikit-Learn 1.6+ VotingClassifier AttributeError
-def patch_voting_classifier():
-    if not hasattr(VotingClassifier, "__sklearn_tags__"):
-        def __sklearn_tags__(self):
-            return _DEFAULT_TAGS
-        VotingClassifier.__sklearn_tags__ = __sklearn_tags__
-
-patch_voting_classifier()
 
 
 def create_enhanced_model(n_samples, n_features, progressive=False):
