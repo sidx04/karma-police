@@ -18,8 +18,8 @@ WORKDIR /app
 # Copy system-guardian source
 COPY system-guardian/ /app/
 
-# Copy proto files for gRPC
-COPY system-eye/api/proto/ /app/proto/
+# Copy proto files for gRPC to the correct location
+COPY system-eye/api/proto/ /app/api/proto/
 
 # Install Python dependencies
 RUN pip3 install --no-cache-dir \
@@ -33,7 +33,7 @@ RUN pip3 install --no-cache-dir \
 
 # Generate Python gRPC stubs
 RUN python3 -m grpc_tools.protoc \
-    --proto_path=/app \
+    --proto_path=/app/api/proto \
     --python_out=/app \
     --grpc_python_out=/app \
     /app/api/proto/metrics.proto
