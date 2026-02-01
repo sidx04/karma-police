@@ -193,6 +193,32 @@ class RealWorkloadExecutor:
         else:
             model = self.create_cnn_model(config)
 
+        # Compute parameter count for the created model
+        try:
+            parameter_count = sum(p.numel() for p in model.parameters())
+        except Exception:
+            parameter_count = 0
+
+        def _human_readable_params(n):
+            # Return a human friendly string like '20B' or '3.2M'
+            if n >= 10**11:
+                return f"{n/10**9:.0f}B"
+            if n >= 10**9:
+                # show one decimal for billions if needed
+                val = n/10**9
+                if abs(val - round(val)) < 1e-6:
+                    return f"{int(round(val))}B"
+                return f"{val:.1f}B"
+            if n >= 10**6:
+                return f"{n/10**6:.1f}M".rstrip('0').rstrip('.')
+            return str(n)
+
+        model_info = {
+            'parameter_count': int(parameter_count),
+            'parameter_count_human': _human_readable_params(parameter_count),
+            'phase': config.get('mode', 'unknown')
+        }
+
         # Move to GPU if available
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = model.to(device)

@@ -63,31 +63,148 @@ class MLClassifierService:
             print(f'[ERROR] Failed to load model: {e}')
             return False
 
-    def classify_workload(self, telemetry):
-        """Classify workload from telemetry data"""
-        features = extract_features(telemetry).reshape(1, -1)
+    def classify_workload(self, telemetry, model_info=None):
+        """Classify workload from telemetry data.
+
+        New behavior:
+        - Build a human-readable classification based on model parameter-count bins
+          and execution phase (training/inference).
+        - Only emit the human-readable classification if the underlying model
+          prediction confidence is >= 0.75. Otherwise return an unverified result.
+        """
+        # Extract numeric features for ML prediction (if available)
+        try:
+            features = extract_features(telemetry).reshape(1, -1)
+        except Exception:
+            features = None
 
         # Apply feature selection if available
-        if self.feature_selector is not None:
-            features_selected = self.feature_selector.transform(features)
+        if features is not None:
+            if self.feature_selector is not None:
+                features_selected = self.feature_selector.transform(features)
+            else:
+                features_selected = features
+
+            features_scaled = self.scaler.transform(features_selected)
+
+            # Attempt to get model probabilities
+            probabilities = None
+            confidence = 0.0
+            try:
+                if hasattr(self.model, 'predict_proba'):
+                    probabilities = self.model.predict_proba(features_scaled)[0]
+                    confidence = float(np.max(probabilities))
+                    prediction = int(self.model.predict(features_scaled)[0])
+                else:
+                    # Fallback: use predict (no probabilities)
+                    prediction = int(self.model.predict(features_scaled)[0])
+                    confidence = 0.0
+            except Exception:
+                probabilities = None
+                confidence = 0.0
         else:
-            features_selected = features
+            probabilities = None
+            confidence = 0.0
 
-        features_scaled = self.scaler.transform(features_selected)
+        # Helper: human readable param formatting and binning
+        def _human_readable_params(n):
+            if n is None:
+                return 'unknown'
+            if n >= 10**11:
+                return f"{n/10**9:.0f}B"
+            if n >= 10**9:
+                val = n/10**9
+                if abs(val - round(val)) < 1e-6:
+                    return f"{int(round(val))}B"
+                return f"{val:.1f}B"
+            if n >= 10**6:
+                return f"{n/10**6:.1f}M".rstrip('0').rstrip('.')
+            return str(n)
 
-        prediction = self.model.predict(features_scaled)[0]
-        probabilities = self.model.predict_proba(features_scaled)[0]
-        confidence = np.max(probabilities)
+        def _param_bin(n):
+            # Return (bin_name, range_str)
+            if n is None:
+                return ('Unknown size', 'unknown')
+            if n < 1_000_000_000:
+                return ('Very Small', '< 1B')
+            if 1_000_000_000 <= n < 10_000_000_000:
+                return ('Small', '1–10B')
+            if 10_000_000_000 <= n < 30_000_000_000:
+                return ('Medium', '10–30B')
+            if 30_000_000_000 <= n < 100_000_000_000:
+                return ('Large', '30–100B')
+            return ('Very Large', '> 100B')
 
-        workload_type = self.encoder.inverse_transform([prediction])[0]
+        # Determine parameter count and phase
+        param_count = None
+        phase = None
+        if model_info and isinstance(model_info, dict):
+            param_count = model_info.get('parameter_count')
+            phase = model_info.get('phase')
+        # telemetry may embed model_info
+        if param_count is None and isinstance(telemetry, dict):
+            mi = telemetry.get('model_info')
+            if isinstance(mi, dict):
+                param_count = mi.get('parameter_count')
+                phase = phase or mi.get('phase')
+
+        # Fallback: try to infer phase from predicted class label if available
+        inferred_phase = None
+        try:
+            if 'prediction' in locals() and hasattr(self.encoder, 'inverse_transform'):
+                pred_label = self.encoder.inverse_transform([prediction])[0]
+                if pred_label.endswith('_training'):
+                    inferred_phase = 'training'
+                elif pred_label.endswith('_inference'):
+                    inferred_phase = 'inference'
+        except Exception:
+            inferred_phase = None
+
+        if phase is None:
+            phase = inferred_phase or 'unknown'
+
+        # Build human-readable classification string
+        bin_name, range_str = _param_bin(param_count)
+        human_params = _human_readable_params(param_count)
+        phase_text = phase.lower() if phase else 'unknown'
+        classification_string = f"{bin_name} model ({range_str} parameters) being {phase_text}"
+
+        # Only emit classification if confidence is high enough
+        verified = False
+        if confidence >= 0.75:
+            verified = True
+            return {
+                'workload_type': classification_string,
+                'confidence': float(confidence),
+                'probabilities': {
+                    class_name: float(prob)
+                    for class_name, prob in zip(self.encoder.classes_, probabilities)
+                } if probabilities is not None else {},
+                'parameter_count': int(param_count) if param_count is not None else None,
+                'parameter_count_human': _human_readable_params(param_count),
+                'verified': True
+            }
+
+        # Low confidence: return unverified response (do not claim classification)
+        # Provide best-effort info for debugging
+        best_guess = None
+        if 'prediction' in locals() and hasattr(self.encoder, 'inverse_transform'):
+            try:
+                best_guess = self.encoder.inverse_transform([prediction])[0]
+            except Exception:
+                best_guess = None
 
         return {
-            'workload_type': workload_type,
+            'workload_type': 'unverified',
             'confidence': float(confidence),
             'probabilities': {
                 class_name: float(prob)
                 for class_name, prob in zip(self.encoder.classes_, probabilities)
-            }
+            } if probabilities is not None else {},
+            'parameter_count': int(param_count) if param_count is not None else None,
+            'parameter_count_human': _human_readable_params(param_count),
+            'verified': False,
+            'best_guess': best_guess
         }
 
 
@@ -117,8 +234,41 @@ class LiveDemoRunner:
             # Execute workload and capture telemetry
             telemetry = self.executor.execute_real_workload(workload, duration_seconds=30)
 
+            # Build model_info from executor config so classification can use parameter count
+            cfg = self.executor.workload_configs.get(workload, {})
+            model_info = None
+            try:
+                if cfg.get('model_type') == 'transformer':
+                    tmp_model = self.executor.create_transformer_model(cfg)
+                else:
+                    tmp_model = self.executor.create_cnn_model(cfg)
+                param_count = sum(p.numel() for p in tmp_model.parameters())
+                def _hr(n):
+                    if n >= 10**9:
+                        val = n/10**9
+                        if abs(val - round(val)) < 1e-6:
+                            return f"{int(round(val))}B"
+                        return f"{val:.1f}B"
+                    if n >= 10**6:
+                        return f"{n/10**6:.1f}M".rstrip('0').rstrip('.')
+                    return str(n)
+                model_info = {
+                    'parameter_count': int(param_count),
+                    'parameter_count_human': _hr(param_count),
+                    'phase': cfg.get('mode', 'unknown')
+                }
+            except Exception:
+                model_info = None
+
+            # Attach model_info into telemetry if possible
+            if isinstance(telemetry, dict):
+                try:
+                    telemetry['model_info'] = model_info
+                except Exception:
+                    pass
+
             # Classify the workload
-            result = self.classifier.classify_workload(telemetry)
+            result = self.classifier.classify_workload(telemetry, model_info=model_info)
             results.append((workload, result))
 
             # Display results
@@ -179,7 +329,40 @@ class LiveDemoRunner:
         import random
         workload_types = list(self.executor.workload_configs.keys())
         workload = random.choice(workload_types)
-        return self.executor.execute_real_workload(workload, duration)
+        telemetry = self.executor.execute_real_workload(workload, duration)
+
+        # Try to attach model_info from the workload config
+        cfg = self.executor.workload_configs.get(workload, {})
+        try:
+            if cfg.get('model_type') == 'transformer':
+                tmp_model = self.executor.create_transformer_model(cfg)
+            else:
+                tmp_model = self.executor.create_cnn_model(cfg)
+            param_count = sum(p.numel() for p in tmp_model.parameters())
+            def _hr(n):
+                if n >= 10**9:
+                    val = n/10**9
+                    if abs(val - round(val)) < 1e-6:
+                        return f"{int(round(val))}B"
+                    return f"{val:.1f}B"
+                if n >= 10**6:
+                    return f"{n/10**6:.1f}M".rstrip('0').rstrip('.')
+                return str(n)
+            model_info = {
+                'parameter_count': int(param_count),
+                'parameter_count_human': _hr(param_count),
+                'phase': cfg.get('mode', 'unknown')
+            }
+        except Exception:
+            model_info = None
+
+        if isinstance(telemetry, dict):
+            try:
+                telemetry['model_info'] = model_info
+            except Exception:
+                pass
+
+        return telemetry
 
     def _print_summary(self, results):
         """Print demo summary"""

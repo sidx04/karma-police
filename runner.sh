@@ -42,5 +42,7 @@ for model in "${models[@]}"; do
     # Run inference and pipe to a log file if you want to compare later
     echo "$INPUT_PROMPT" | ollama run "$model" | tee "${model//:/_}_response.md"
     
+    sleep 40
+    
     echo -e "\n\n"
 done

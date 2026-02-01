@@ -79,7 +79,33 @@ class ModelTester:
         pred, confidence, _ = self._predict_with_confidence(features_scaled)
         pred_class = self.encoder.inverse_transform([pred])[0]
 
-        print(f'[TEST] Basic inference result: {pred_class} (confidence: {confidence:.3f})')
+        # Map legacy workload label to parameter-count classification for readability
+        def _label_to_classification(label):
+            phase = 'training' if label.endswith('_training') else 'inference' if label.endswith('_inference') else 'unknown'
+            mapping = {
+                'transformer_training': 20_000_000_000,
+                'transformer_inference': 5_000_000_000,
+                'cnn_training': 50_000_000_000,
+                'cnn_inference': 500_000_000
+            }
+            pc = mapping.get(label)
+            if pc is None:
+                return f'Unknown model being {phase}'
+            # binning
+            if pc < 1_000_000_000:
+                bin_name, range_str = 'Very Small', '< 1B'
+            elif pc < 10_000_000_000:
+                bin_name, range_str = 'Small', '1–10B'
+            elif pc < 30_000_000_000:
+                bin_name, range_str = 'Medium', '10–30B'
+            elif pc < 100_000_000_000:
+                bin_name, range_str = 'Large', '30–100B'
+            else:
+                bin_name, range_str = 'Very Large', '> 100B'
+            return f"{bin_name} model ({range_str} parameters) being {phase}"
+
+        readable = _label_to_classification(pred_class)
+        print(f'[TEST] Basic inference result: {readable} (confidence: {confidence:.3f})')
         return pred_class
 
     def comprehensive_model_test(self):
@@ -141,8 +167,35 @@ class ModelTester:
 
             print(f'{status} {test_name}')
             print(f'     GPU: {gpu_range[0]}-{gpu_range[1]}%, Mem: {mem_range[0]}-{mem_range[1]}%, Growth: {mem_growth}')
-            print(f'     Expected: {expected}')
-            print(f'     Predicted: {pred_class} (confidence: {confidence:.3f})')
+            # Map legacy labels to human-readable parameter-count classification
+            def _label_to_classification(label):
+                phase = 'training' if label.endswith('_training') else 'inference' if label.endswith('_inference') else 'unknown'
+                mapping = {
+                    'transformer_training': 20_000_000_000,
+                    'transformer_inference': 5_000_000_000,
+                    'cnn_training': 50_000_000_000,
+                    'cnn_inference': 500_000_000
+                }
+                pc = mapping.get(label)
+                if pc is None:
+                    return f'Unknown model being {phase}'
+                if pc < 1_000_000_000:
+                    bin_name, range_str = 'Very Small', '< 1B'
+                elif pc < 10_000_000_000:
+                    bin_name, range_str = 'Small', '1–10B'
+                elif pc < 30_000_000_000:
+                    bin_name, range_str = 'Medium', '10–30B'
+                elif pc < 100_000_000_000:
+                    bin_name, range_str = 'Large', '30–100B'
+                else:
+                    bin_name, range_str = 'Very Large', '> 100B'
+                return f"{bin_name} model ({range_str} parameters) being {phase}"
+
+            expected_readable = _label_to_classification(expected)
+            predicted_readable = _label_to_classification(pred_class)
+
+            print(f'     Expected: {expected} -> {expected_readable}')
+            print(f'     Predicted: {pred_class} -> {predicted_readable} (confidence: {confidence:.3f})')
 
             # Show probability distribution for failed tests
             if not is_correct and probabilities:
